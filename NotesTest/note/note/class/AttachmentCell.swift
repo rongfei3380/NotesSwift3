@@ -8,11 +8,21 @@
 
 import Cocoa
 
-class AttachmentCell: NSCollectionViewItem {
+@objc protocol AttachmentCellDelegate : NSObjectProtocol {
+    func openSelectedAttachment(collectionItem : NSCollectionViewItem)
+}
 
+class AttachmentCell: NSCollectionViewItem {
+    weak var delegate : AttachmentCellDelegate?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        if (event.clickCount == 2) {
+            delegate?.openSelectedAttachment(collectionItem: self)
+        }
     }
     
 }

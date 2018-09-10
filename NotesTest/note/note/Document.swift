@@ -14,7 +14,7 @@ extension FileWrapper {
     }
     
     dynamic var thumbnailImage : NSImage {
-        if let fileExtension = self.fileExtension {
+        if let fileExtension = self.fileExtension { 
             return NSWorkspace.shared().icon(forFileType: fileExtension)
         } else {
             return NSWorkspace.shared().icon(forFileType: "")
@@ -41,6 +41,9 @@ class Document: NSDocument {
     var text001 : NSAttributedString = NSAttributedString()
     
     var documentFileWrapper = FileWrapper(directoryWithFileWrappers: [:])
+    
+    var popover : NSPopover?
+    
 
     @IBOutlet var attachmentsList : NSCollectionView!
     
@@ -136,8 +139,129 @@ class Document: NSDocument {
     }
     // END file_wrapper_of_type
     
-    @IBAction func addAttachment(_ sender: Any) {
+    private var attachmentsDirectoryWrapper : FileWrapper? {
+        guard let fileWrappers = self.documentFileWrapper.fileWrappers else {
+            NSLog("Attempting to access document's contents, but none found!")
+            return nil
+        }
         
+        var attachmentsDirectoryWrapper = fileWrappers[NoteDocumentFileNames.AttachmentsDirectory.rawValue]
+        
+        if attachmentsDirectoryWrapper == nil {
+            attachmentsDirectoryWrapper = FileWrapper(directoryWithFileWrappers: [:])
+            
+            attachmentsDirectoryWrapper?.preferredFilename = NoteDocumentFileNames.AttachmentsDirectory.rawValue
+            
+            self.documentFileWrapper.addFileWrapper(attachmentsDirectoryWrapper!)
+        }
+        
+        
+        return attachmentsDirectoryWrapper
+    }
+    
+    
+    func addAttachmentAtURL(url : NSURL) throws {
+        guard attachmentsDirectoryWrapper != nil else {
+            throw err(.cannotAccessAttachments)
+        }
+        
+        self.willChangeValue(forKey: "attachedFiles")
+        
+        let newAttachment = try FileWrapper(url: url as URL, options: FileWrapper.ReadingOptions.immediate)
+        
+        attachmentsDirectoryWrapper?.addFileWrapper(newAttachment)
+        self.updateChangeCount(.changeDone)
+        self.didChangeValue(forKey: "attachedFiles")
+    }
+    
+    dynamic var attachedFiles : [FileWrapper]? {
+        if let attachmentsFileWrappers = self.attachmentsDirectoryWrapper?.fileWrappers {
+            let attachments = Array(attachmentsFileWrappers.values)
+            return attachments
+        } else {
+            return nil
+        }
+    }
+    
+    @IBAction func addAttachment(_ sender: NSButton) {
+        if let viewController = AddAttachmentViewController(nibName: "AddAttachmentViewController", bundle: Bundle.main) {
+            viewController.delagate = self
+            
+            self.popover = NSPopover()
+            self.popover?.behavior = .transient
+            self.popover?.contentViewController = viewController
+            self.popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: NSRectEdge.maxY)
+        }
     }
 }
 
+extension Document : AddAttachmentDelegate {
+    func addFile() {
+        let panel = NSOpenPanel()
+        
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        
+        panel.begin { (result) -> Void in
+            if result == NSModalResponseOK, let resultURL = panel.urls.first {
+                do {
+                    try self.addAttachmentAtURL(url: resultURL as NSURL)
+                    self.attachmentsList.reloadData()
+                } catch let error as NSError {
+                    if let window = self.windowForSheet {
+                        NSApp.presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
+                    } else {
+                        NSApp.presentError(error)
+                    }
+                }
+
+            }
+        }
+    }
+}
+
+extension Document : NSCollectionViewDataSource {
+    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
+        return self.attachedFiles?.count ?? 0
+    }
+    
+    func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
+        let attachment = self.attachedFiles![indexPath.item]
+        
+        let item = collectionView.makeItem(withIdentifier: "AttachmentCell", for: indexPath) as! AttachmentCell
+        
+        item.imageView?.image = attachment.thumbnailImage
+        item.textField?.stringValue = attachment.fileExtension ?? ""
+        item.delegate = self
+        
+        return item
+    }
+    
+}
+
+extension Document : NSCollectionViewDelegate {
+    
+}
+
+extension Document : AttachmentCellDelegate {
+    func openSelectedAttachment(collectionItem: NSCollectionViewItem) {
+        guard let selectedIndex = self.attachmentsList.indexPath(for: collectionItem)?.item else {
+            return
+        }
+        
+        guard let attachment = self.attachedFiles?[selectedIndex] else {
+            return
+        }
+        
+        self.autosave(withImplicitCancellability: false) { (error) in
+            var url = self.fileURL
+            url = url?.appendingPathComponent(NoteDocumentFileNames.AttachmentsDirectory.rawValue, isDirectory: true)
+            url = url?.appendingPathComponent(attachment.preferredFilename!)
+            if let path = url?.path {
+                NSWorkspace.shared().openFile(path, withApplication: nil, andDeactivate: true)
+            }
+            
+        }
+    }
+}

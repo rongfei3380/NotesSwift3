@@ -1,14 +1,14 @@
 //
-//  NotesTestUITests.swift
-//  NotesTestUITests
+//  noteUITests.swift
+//  noteUITests
 //
-//  Created by chengfei on 2018/9/7.
+//  Created by chengfei on 2018/9/9.
 //  Copyright © 2018 chengfeir. All rights reserved.
 //
 
 import XCTest
 
-class NotesTestUITests: XCTestCase {
+class noteUITests: XCTestCase {
         
     override func setUp() {
         super.setUp()

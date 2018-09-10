@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14113" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14113"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="AttachmentCell" customModule="note" customModuleProvider="target">
+            <connections>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="87" height="101"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="qaX-Uj-wut">
+                    <rect key="frame" x="20" y="26" width="47" height="49"/>
+                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageAlignment="bottomLeft" imageScaling="proportionallyDown" id="1y2-I6-RtP"/>
+                </imageView>
+                <textField verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bqe-K0-mgk">
+                    <rect key="frame" x="6" y="0.0" width="75" height="22"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="NhA-HN-q16">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+            </subviews>
+            <constraints>
+                <constraint firstItem="qaX-Uj-wut" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="26" id="5yr-C7-8Cn"/>
+                <constraint firstItem="qaX-Uj-wut" firstAttribute="centerX" secondItem="bqe-K0-mgk" secondAttribute="centerX" id="Lkr-NB-laH"/>
+                <constraint firstItem="bqe-K0-mgk" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="-4" id="OsS-Pn-d5f"/>
+                <constraint firstItem="qaX-Uj-wut" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="20" symbolic="YES" id="Wca-0l-z0j"/>
+                <constraint firstItem="qaX-Uj-wut" firstAttribute="centerX" secondItem="Hz6-mo-xeY" secondAttribute="centerX" id="dN6-Oh-epN"/>
+                <constraint firstItem="qaX-Uj-wut" firstAttribute="centerY" secondItem="Hz6-mo-xeY" secondAttribute="centerY" id="l0j-RS-QZr"/>
+                <constraint firstAttribute="bottom" secondItem="bqe-K0-mgk" secondAttribute="bottom" constant="-3" id="tsG-aB-6Xh"/>
+                <constraint firstItem="bqe-K0-mgk" firstAttribute="top" secondItem="qaX-Uj-wut" secondAttribute="bottom" constant="8" symbolic="YES" id="z7f-nB-BO5"/>
+            </constraints>
+            <point key="canvasLocation" x="128.5" y="240.5"/>
+        </customView>
+        <collectionViewItem id="bgD-s3-fqg" customClass="AttachmentCell" customModule="note" customModuleProvider="target">
+            <connections>
+                <outlet property="imageView" destination="qaX-Uj-wut" id="gQm-sv-adb"/>
+                <outlet property="textField" destination="bqe-K0-mgk" id="20g-SG-ArN"/>
+                <outlet property="view" destination="Hz6-mo-xeY" id="yH3-J4-IcW"/>
+            </connections>
+        </collectionViewItem>
+    </objects>
+</document>

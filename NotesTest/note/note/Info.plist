@@ -9,7 +9,7 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>note</string>
+				<string>notes</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string></string>
@@ -23,7 +23,7 @@
 			<string>Editor</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.chengfei.notes</string>
+				<string>com.chengfeiLab.notes</string>
 			</array>
 			<key>LSTypeIsPackage</key>
 			<integer>1</integer>
@@ -65,35 +65,15 @@
 			<key>UTTypeDescription</key>
 			<string>notes</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.chengfei.notes</string>
+			<string>com.chengfeiLab.notes</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
 					<string>notes</string>
 				</array>
-			</dict>
-		</dict>
-	</array>
-	<key>UTImportedTypeDeclarations</key>
-	<array>
-		<dict>
-			<key>CFBundleIdentifier</key>
-			<string></string>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>com.apple.package</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>notes</string>
-			<key>UTTypeIdentifier</key>
-			<string>com.chengfei.notes</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>notes</string>
-				</array>
+				<key>public.mime-type</key>
+				<array/>
 			</dict>
 		</dict>
 	</array>

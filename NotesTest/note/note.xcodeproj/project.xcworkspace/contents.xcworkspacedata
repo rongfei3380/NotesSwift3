@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:NotesTest.xcodeproj">
+      location = "self:note.xcodeproj">
    </FileRef>
 </Workspace>

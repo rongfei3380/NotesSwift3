@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import MapKit
 
 extension FileWrapper {
     dynamic var fileExtension : String? {
@@ -66,6 +67,10 @@ class Document: NSDocument {
     }
     // END osx_window_nib_name
 
+    override func windowControllerDidLoadNib(_ windowController: NSWindowController) {
+        self.attachmentsList.register(forDraggedTypes: [NSURLPboardType])
+    }
+    
     override func data(ofType typeName: String) throws -> Data {
         // Insert code here to write your document to data of the specified type. If outError != nil, ensure that you create and set an appropriate error when returning nil.
         // You can also choose to override fileWrapperOfType:error:, writeToURL:ofType:error:, or writeToURL:ofType:forSaveOperation:originalContentsURL:error: instead.
@@ -127,12 +132,38 @@ class Document: NSDocument {
             self.documentFileWrapper.removeFileWrapper(oldTextFileWrapper)
         }
                 
+        let thumbnailImageData =
+            self.iconImageDataWithSize(size: CGSize(width: 512, height: 512))!
+        let thumbnailWrapper =
+            FileWrapper(regularFileWithContents: thumbnailImageData as Data)
+        
+        let quicklookPreview =
+            FileWrapper(regularFileWithContents: textRTFData)
+        
+        let quickLookFolderFileWrapper =
+            FileWrapper(directoryWithFileWrappers: [
+                NoteDocumentFileNames.QuickLookTextFile.rawValue: quicklookPreview,
+                NoteDocumentFileNames.QuickLookThumbnail.rawValue: thumbnailWrapper
+                ])
+        
+        quickLookFolderFileWrapper.preferredFilename
+            = NoteDocumentFileNames.QuickLookDirectory.rawValue
+        
+        // Remove the old QuickLook folder if it existed
+        if let oldQuickLookFolder = self.documentFileWrapper
+            .fileWrappers?[NoteDocumentFileNames.QuickLookDirectory.rawValue] {
+            self.documentFileWrapper.removeFileWrapper(oldQuickLookFolder)
+        }
+        
+        // Add the new QuickLook folder
+        self.documentFileWrapper.addFileWrapper(quickLookFolderFileWrapper)
+        // END file_wrapper_of_type_quicklook
+        
         // Save the text data into the file
         self.documentFileWrapper.addRegularFile(
             withContents: textRTFData,
             preferredFilename: NoteDocumentFileNames.TextFile.rawValue
         )
-        
         // Return the main document's file wrapper - this is what will
         // be saved on disk
         return self.documentFileWrapper
@@ -193,6 +224,35 @@ class Document: NSDocument {
             self.popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: NSRectEdge.maxY)
         }
     }
+    
+    func iconImageDataWithSize(size : CGSize) -> NSData? {
+        let image = NSImage(size: size)
+        
+        image.lockFocus()
+        
+        let entireImageRect = CGRect(origin: CGPoint.zero, size: size)
+        
+        // 白色背景填充
+        let backgroudRect = NSBezierPath(rect: entireImageRect)
+        NSColor.white.setFill()
+        backgroudRect.fill()
+        
+        if (self.attachedFiles?.count)! >= 1{
+            // 渲染文本和第一个附件
+            let attachmentImage = self.attachedFiles?[0].thumbnailImage
+            let result = entireImageRect.divided(atDistance: entireImageRect.size.height/2.0, from: CGRectEdge.minYEdge)
+            self.text001.draw(in: result.slice)
+            attachmentImage?.draw(in: result.remainder)
+        } else {
+            self.text001.draw(in: entireImageRect)
+        }
+        
+        let bitmapRepresentation = NSBitmapImageRep(focusedViewRect: entireImageRect)
+        
+        image.unlockFocus()
+        
+        return bitmapRepresentation?.representation(using: .PNG, properties: [:]) as NSData?
+    }
 }
 
 extension Document : AddAttachmentDelegate {
@@ -240,10 +300,6 @@ extension Document : NSCollectionViewDataSource {
     
 }
 
-extension Document : NSCollectionViewDelegate {
-    
-}
-
 extension Document : AttachmentCellDelegate {
     func openSelectedAttachment(collectionItem: NSCollectionViewItem) {
         guard let selectedIndex = self.attachmentsList.indexPath(for: collectionItem)?.item else {
@@ -255,13 +311,58 @@ extension Document : AttachmentCellDelegate {
         }
         
         self.autosave(withImplicitCancellability: false) { (error) in
-            var url = self.fileURL
-            url = url?.appendingPathComponent(NoteDocumentFileNames.AttachmentsDirectory.rawValue, isDirectory: true)
-            url = url?.appendingPathComponent(attachment.preferredFilename!)
-            if let path = url?.path {
-                NSWorkspace.shared().openFile(path, withApplication: nil, andDeactivate: true)
+            
+            if attachment.conformsToType(type: kUTTypeJSON), let data = attachment.regularFileContents, let json = try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableLeaves) as? NSDictionary{
+                if  let lat = json?["lat"] as? CLLocationDegrees,
+                    let lon = json?["long"] as? CLLocationDegrees{
+                    
+                    let coordinate = CLLocationCoordinate2DMake(lat, lon)
+//                    创建地标
+                    let placemark = MKPlacemark.init(coordinate: coordinate, addressDictionary: nil)
+                    //                    使用地标创建 地图项目
+                    let mapItem = MKMapItem.init(placemark: placemark)
+                    // 在地图项目中打开
+                    mapItem.openInMaps(launchOptions: nil)
+                    
+                }
+                
+            } else {
+                var url = self.fileURL
+                url = url?.appendingPathComponent(NoteDocumentFileNames.AttachmentsDirectory.rawValue, isDirectory: true)
+                url = url?.appendingPathComponent(attachment.preferredFilename!)
+                if let path = url?.path {
+                    NSWorkspace.shared().openFile(path, withApplication: nil, andDeactivate: true)
+                }
             }
+            
             
         }
     }
 }
+
+extension Document : NSCollectionViewDelegate {
+    func collectionView(_ collectionView: NSCollectionView, validateDrop draggingInfo: NSDraggingInfo, proposedIndexPath proposedDropIndexPath: AutoreleasingUnsafeMutablePointer<NSIndexPath>, dropOperation proposedDropOperation: UnsafeMutablePointer<NSCollectionViewDropOperation>) -> NSDragOperation {
+        return NSDragOperation.copy
+    }
+    func collectionView(_ collectionView: NSCollectionView,
+                        acceptDrop draggingInfo: NSDraggingInfo,
+                        indexPath: IndexPath,
+                        dropOperation: NSCollectionViewDropOperation) -> Bool {
+        let pasteboard = draggingInfo.draggingPasteboard()
+        
+        if pasteboard.types?.contains(NSURLPboardType) == true,
+            let url = NSURL(from : pasteboard){
+            do {
+                try self.addAttachmentAtURL(url: url)
+                
+                attachmentsList.reloadData()
+                return true
+            } catch let error as NSError {
+                self.presentError(error)
+                return false
+            }
+        }
+        return false
+    }
+}
+
